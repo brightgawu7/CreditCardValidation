@@ -1,0 +1,184 @@
+﻿@page "/"
+@using System.Text.RegularExpressions;
+@inject CreditCard Card;
+@using CreditCardValidation.Web.Repository;
+
+@inject CreditCardRepository cardRepository
+@inject NavigationManager NavManager
+
+
+<PageTitle>Credit Card</PageTitle>
+
+
+<div class="w-[98%] max-w-screen-largeDesktop tablet:w-[80%] desktop:w-[550px]  mx-auto   ">
+
+	<CardInfoComponent CreditCardInfo="@Card" RotateCard="RotateCard" BorderIndex="BorderIndex" CardBumber="CardBumber" />
+
+	<div class="w-full bg-white-primary  rounded-[10px] drop-shadow-2xl z-5 relative ">
+		<div class="pt-[100px]">
+			<EditForm Model="@Card" OnValidSubmit="@HandleSubmit" class="w-full mx-auto p-[1rem] sm:p-[2rem] flex flex-col gap-6">
+				<DataAnnotationsValidator />
+
+				<div>
+					<label class="label" for="cardNumber">
+						Card Number
+					</label>
+					<input type="text" id="card-number" class="input" maxlength="19" @bind:event="oninput" @bind:get="Card.CardNumber" @bind:set="SetCardNumber" @onfocus="@(() => SetBorderIndex(1))" @onblur="@(() => SetBorderIndex(0))" />
+
+					<ValidationMessage For="@(() => Card.CardNumber)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+					<ValidationMessage For="@(() => Card.CardType)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+
+				</div>
+
+
+				<div>
+					<label class="label" for="cardName">
+						Card Name
+					</label>
+					<input id="cardName" @bind="Card.CardName" @bind:event="oninput" class="input" maxlength="19"
+					@onfocus="@(() => SetBorderIndex(2))" @onblur="@(() => SetBorderIndex(0))" />
+					<ValidationMessage For="@(() => Card.CardName)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+				</div>
+
+				<div class="w-full flex flex-row flex-wrap justify-between">
+					<div class="w-[65%]">
+
+						<p class="font-sans text-[0.8rem]  font-medium mb-[5px] "> Expiration Date </p>
+						<div class="w-full flex justify-between">
+
+							<select class="select" @bind="Card.ExpiryMonth"
+							@onfocus="@(() => SetBorderIndex(3))" @onblur="@(() => SetBorderIndex(0))">
+								<option selected value="00">Month</option>
+								@foreach (var month in Months)
+								{
+									<option class="option" value="@month">@month </option>
+								}
+							</select>
+
+							<select class="select" @bind="Card.ExpiryYear"
+							@onfocus="@(() => SetBorderIndex(3))" @onblur="@(() => SetBorderIndex(0))">
+								<option selected value="00"> Year </option>
+								@foreach (var year in GetYears())
+								{
+									<option class="option" value="@year.Substring(2,2)">@year</option>
+
+								}
+
+							</select>
+
+
+						</div>
+						<ValidationMessage For="@(() => Card.ExpiryMonth)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+						<ValidationMessage For="@(() => Card.ExpiryYear)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+						<ValidationMessage For="@(() => Card.CardCVV)" class="font-sans text-[0.8rem] tracking-[0.05em] mt-[0.5em] pl-[0.5em] text-red-500" />
+					</div>
+
+
+					<div class="w-[30%]">
+						<label class="label" for="CardCVV">CVV</label>
+						<input type="text" class="input" id="CardCVV" @bind:get="Card.CardCVV" @bind:set="SetCardCVV" @bind:event="oninput" @onfocus="@(() => HandleRotateCard(true))" @onblur="@(() => HandleRotateCard(false))" maxlength="4" />
+
+					</div>
+
+				</div>
+
+
+
+
+				<button type="submit"
+						class="w-full mx-auto font-sans text-[1rem] rounded-md  text-white-primary bg-blue-700 py-[0.5em] drop-shadow-xl hover:drop-shadow-2xl hover:bg-sky-700">
+					Submit
+				</button>
+			</EditForm>
+		</div>
+	</div>
+</div>
+
+
+@code {
+
+	private int BorderIndex { get; set; }
+
+	private void SetBorderIndex(int value)
+	{
+		BorderIndex = value;
+
+	}
+	private Task SetCardCVV(string value)
+	{
+		Card.CardCVV = Regex.Replace(value.Trim(), "[^0-9 ]", "");
+		return Task.CompletedTask;
+
+	}
+
+	private Task SetCardNumber(string value)
+	{
+		string Value = Regex.Replace(value.Trim(), "[^0-9 ]", "");
+		Value = Value.Replace(" ", "");
+
+		char[] cardBumber = new char[16] { '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' };
+		if (Value != null)
+		{
+			char[] chararray = Value.ToCharArray();
+			for (int i = 0; i < chararray.Length; i++)
+			{
+				cardBumber[i] = chararray[i];
+			}
+
+			CardBumber = cardBumber;
+		}
+
+		Card.CardType = GetCardTypeFromNumber(Value);
+		Card.CardNumber = string.Join(" ", SplitStringIntoChunks(Value, 4));
+
+
+
+
+
+
+		return Task.CompletedTask;
+
+	}
+
+	private char[] CardBumber { get; set; } = new char[16] { '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' };
+
+
+	static string[] SplitStringIntoChunks(string input, int chunkSize)
+	{
+		int length = (int)Math.Ceiling((double)input.Length / chunkSize);
+		string[] chunks = new string[length];
+
+		for (int i = 0; i < length; i++)
+		{
+			int startIndex = i * chunkSize;
+			int endIndex = Math.Min(startIndex + chunkSize, input.Length);
+			chunks[i] = input[startIndex..endIndex];
+		}
+
+		return chunks;
+	}
+
+
+	public void HandleSubmit()
+	{
+		CreditCard creditCard = new();
+		creditCard.CardNumber = Card.CardNumber.Replace(" ", "");
+		creditCard.CardName = Card.CardName;
+		creditCard.ExpiryMonth = Card.ExpiryMonth;
+		creditCard.ExpiryYear = Card.ExpiryYear;
+		creditCard.CardCVV = Card.CardCVV;
+		creditCard.CardType = Card.CardType;
+		cardRepository.AddCard(creditCard);
+
+		Card.CardNumber = "";
+		Card.CardName = null;
+		Card.CardCVV = "";
+		Card.CardType = "";
+		Card.ExpiryMonth = null;
+		Card.ExpiryYear = null;
+
+		NavManager.NavigateTo("/dashboard");
+
+	}
+}
+

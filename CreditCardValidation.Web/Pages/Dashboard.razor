@@ -1,0 +1,59 @@
+﻿@page "/dashboard"
+@using CreditCardValidation.Web.Repository;
+
+@inject CreditCardRepository cardRepository
+
+<PageTitle>Credit Card Dashboard</PageTitle>
+
+
+@if (CreditCards is not null)
+{
+	<table class="table-auto w-[90%] rounded-md mt-10 mx-auto">
+		<thead>
+			<tr class="bg-gray-100">
+				<th class="px-4 py-2 text-gray-600">ID</th>
+				<th class="px-4 py-2 text-gray-600">Holder Name</th>
+				<th class="px-4 py-2 text-gray-600">Card Number</th>
+				<th class="px-4 py-2 text-gray-600">Expiration Date</th>
+				<th class="px-4 py-2 text-gray-600">CVV</th>
+				<th class="px-4 py-2 text-gray-600">Card Type</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var card in CreditCards)
+			{
+				<tr class="bg-white odd:bg-red-100 text-center">
+					<td class="border p-2">@card.Id</td>
+					<td class="border p-2">@card.CardName</td>
+					<td class="border p-2">@card.CardNumber</td>
+					<td class="border p-2">@card.ExpiryMonth/@card.ExpiryYear</td>
+					<td class="border p-2">@card.CardCVV</td>
+					<td class="border p-2">@card.CardType</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+else
+{
+	<h3 class="text-3xl"> No cards have been submitted yet</h3>
+}
+
+
+@code {
+
+	public IEnumerable<CreditCard>? CreditCards { get; set; }
+
+	protected override async void OnInitialized()
+	{
+		base.OnInitialized();
+
+		CreditCards = await cardRepository.GetCreditCards();
+
+
+	}
+
+
+
+
+}
