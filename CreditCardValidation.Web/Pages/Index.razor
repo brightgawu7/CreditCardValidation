@@ -104,14 +104,13 @@
 		BorderIndex = value;
 
 	}
-	private Task SetCardCVV(string value)
+	private void SetCardCVV(string value)
 	{
 		Card.CardCVV = Regex.Replace(value.Trim(), "[^0-9 ]", "");
-		return Task.CompletedTask;
 
 	}
 
-	private Task SetCardNumber(string value)
+	private void SetCardNumber(string value)
 	{
 		string Value = Regex.Replace(value.Trim(), "[^0-9 ]", "");
 		Value = Value.Replace(" ", "");
@@ -136,7 +135,6 @@
 
 
 
-		return Task.CompletedTask;
 
 	}
 
